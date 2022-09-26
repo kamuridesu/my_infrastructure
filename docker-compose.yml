@@ -1,0 +1,26 @@
+version: "3"
+services:
+  gitlab:
+    image: "gitlab/gitlab-ee:latest"
+    restart: always
+    hostname: "gitlab.kube.local"
+    environment:
+      GITLAB_OMNIBUS_CONFIG:
+        external_url 'https://gitlab.kube.local'
+    ports:
+      - 80:8080
+      - 443:443
+      - 2222:22
+    volumes:
+      - ./gitlab/config:/etc/gitlab
+      - ./gitlab/logs:/var/log/gitlab
+      - ./gitlab/data:/var/opt/gitlab
+    shm_size: '256m'
+    deploy:
+      resources:
+        limits:
+          memory: "5G"
+          cpus: "4"
+        reservations:
+          memory: "4G"
+          cpus: "2"

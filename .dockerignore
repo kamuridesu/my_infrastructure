@@ -1,0 +1,7 @@
+.vagrant
+gitlab
+jenkins
+sonarqube
+Dockerfile
+docker-compose.yml
+Vagrantfile
