@@ -1,0 +1,15 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: keycloak-gateway
+  namespace: keycloak
+spec:
+  selector:
+    app: istio-ingressgateway
+  servers:
+    - hosts:
+        - keycloak.kube.local
+      port:
+        name: http
+        number: 80
+        protocol: HTTP

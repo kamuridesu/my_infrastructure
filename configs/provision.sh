@@ -36,6 +36,7 @@ cowsay Creating Istio ingress gateway
 kubectl create namespace istio-ingress
 kubectl label namespace istio-ingress istio-injection=enabled # https://istio.io/latest/docs/setup/additional-setup/sidecar-injection/#automatic-sidecar-injection
 helm install istio-ingressgateway istio/gateway -n istio-ingress
+cowsay Waiting Istio...
 sleep 30  # wait 30 seconds for the services to be up
 cowsay Exposing minikube via load balancer
 nohup minikube tunnel &
@@ -46,11 +47,23 @@ kubectl create namespace argocd
 kubectl label namespace argocd istio-injection=enabled --overwrite
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 kubectl patch deployment -n argocd argocd-server --patch-file /vagrant/configs/argocd/patch.yaml # patch argocd-server to avoid tls errors
+cowsay Waiting ArgoCD...
 sleep 30 # wait for the services to start, increase this if want
 # Files in the configs/argocd folder
 # Reference for ingresses: https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/
 kubectl apply -n argocd -f /vagrant/configs/argocd/gateway.yaml
 kubectl apply -n argocd -f /vagrant/configs/argocd/virtualservice.yaml
+
+
+# Deploy keycloak
+kubectl create namespace keycloak
+kubectl label namespace keycloak istio-injection=enabled --overwrite
+kubectl apply -n keycloak -f /vagrant/configs/keycloak/service.yaml
+kubectl apply -n keycloak -f /vagrant/configs/keycloak/deployment.yaml
+cowsay Waiting Keycloak...
+sleep 60 # keycloak takes some time to boot, ideally one or two minutes in my cpu
+kubectl apply -n keycloak -f /vagrant/configs/keycloak/gateway.yaml
+kubectl apply -n keycloak -f /vagrant/configs/keycloak/virtualservice.yaml
 
 cowsay Setting up HAProxy
 # https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/
