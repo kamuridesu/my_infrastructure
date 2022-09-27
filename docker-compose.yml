@@ -3,14 +3,10 @@ services:
   gitlab:
     image: "gitlab/gitlab-ee:latest"
     restart: always
-    hostname: "gitlab.kube.local"
-    environment:
-      GITLAB_OMNIBUS_CONFIG:
-        external_url 'https://gitlab.kube.local'
     ports:
-      - 80:8080
+      - 80:80
       - 443:443
-      - 2222:22
+      - 2223:22
     volumes:
       - ./gitlab/config:/etc/gitlab
       - ./gitlab/logs:/var/log/gitlab
@@ -23,4 +19,20 @@ services:
           cpus: "4"
         reservations:
           memory: "4G"
+          cpus: "3"
+
+  db:
+    image: postgres:14
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: "SomeSecurePassword"
+    ports:
+      - 5432:5432
+    deploy:
+      resources:
+        limits:
+          memory: "3G"
           cpus: "2"
+        reservations:
+          memory: "2G"
+          cpus: "1"

@@ -31,7 +31,7 @@ helm repo update
 kubectl create namespace istio-system
 helm install istio-base istio/base -n istio-system
 helm install istiod istio/istiod -n istio-system --wait
-# On step for, from here: https://istio.io/latest/docs/setup/additional-setup/gateway/
+# On step four, from here: https://istio.io/latest/docs/setup/additional-setup/gateway/
 cowsay Creating Istio ingress gateway
 kubectl create namespace istio-ingress
 kubectl label namespace istio-ingress istio-injection=enabled # https://istio.io/latest/docs/setup/additional-setup/sidecar-injection/#automatic-sidecar-injection
@@ -48,12 +48,11 @@ kubectl label namespace argocd istio-injection=enabled --overwrite
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 kubectl patch deployment -n argocd argocd-server --patch-file /vagrant/configs/argocd/patch.yaml # patch argocd-server to avoid tls errors
 cowsay Waiting ArgoCD...
-sleep 30 # wait for the services to start, increase this if want
+sleep 30 # wait for the services to start, increase this if you want
 # Files in the configs/argocd folder
 # Reference for ingresses: https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/
 kubectl apply -n argocd -f /vagrant/configs/argocd/gateway.yaml
 kubectl apply -n argocd -f /vagrant/configs/argocd/virtualservice.yaml
-
 
 # Deploy keycloak
 kubectl create namespace keycloak

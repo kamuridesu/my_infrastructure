@@ -5,3 +5,4 @@ sonarqube
 Dockerfile
 docker-compose.yml
 Vagrantfile
+terraform
