@@ -1,0 +1,5 @@
+gitlab_base_url              = "http://127.0.0.1/api/v4/"
+keycloak_deployment_path     = "/home/kamuri/Documents/Documentos/workspace/personal/infrastructure/configs/keycloak/deployment.yaml"
+keycloak_service_path        = "/home/kamuri/Documents/Documentos/workspace/personal/infrastructure/configs/keycloak/service.yaml"
+keycloak_gateway_path        = "/home/kamuri/Documents/Documentos/workspace/personal/infrastructure/configs/keycloak/gateway.yaml"
+keycloak_virtualservice_path = "/home/kamuri/Documents/Documentos/workspace/personal/infrastructure/configs/keycloak/virtualservice.yaml"
