@@ -20,9 +20,18 @@ install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 sysctl fs.protected_regular=0  # avoid some permissions issues
 minikube config set driver docker  # explicitly set driver to docker
 cowsay Stating minikube
-minikube start --force --memory=3200 --cpus=3
+minikube start --force --memory=3200 --cpus=3 --network-plugin=cni 
 minikube addons enable ingress  # enable ingress
 kubectl config use-context minikube
+
+cowsay "Adding hosts to Minikube"
+mkdir -p ~/.minikube/files/etc
+HOST_IP="$(minikube ssh "nslookup host.minikube.internal | grep Server | head -1" | awk '{print $2}' | tr -d $'\r')"
+echo "$HOST_IP    argocd.kube.local" >> /etc/hosts
+echo "$HOST_IP    keycloak.kube.local" >> /etc/hosts
+minikube ssh "sudo su -c \"echo '$HOST_IP    argocd.kube.local' >> /etc/hosts\""
+minikube ssh "sudo su -c \"echo '$HOST_IP    keycloak.kube.local' >> /etc/hosts\""
+cp /etc/hosts ~/.minikube/files/etc/hosts
 
 cowsay Setting up Istio
 # Start from here: https://istio.io/latest/docs/setup/install/helm/
@@ -38,6 +47,12 @@ kubectl label namespace istio-ingress istio-injection=enabled # https://istio.io
 helm install istio-ingressgateway istio/gateway -n istio-ingress
 cowsay Waiting Istio...
 sleep 30  # wait 30 seconds for the services to be up
+
+cowsay Installing calico... # https://projectcalico.docs.tigera.io/getting-started/kubernetes/self-managed-onprem/onpremises
+kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.24.1/manifests/tigera-operator.yaml
+kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.24.1/manifests/custom-resources.yaml
+sleep 30
+
 cowsay Exposing minikube via load balancer
 nohup minikube tunnel &
 

@@ -11,5 +11,7 @@ Vagrant.configure("2") do |config|
     vb.memory = "4000"
     vb.cpus = "4"
   end
-  config.vm.provision "shell", path: "configs/provision.sh"
+  config.vm.provision "shell", path: "configs/shell/provision.sh"
+  config.vm.synced_folder ".", "/vagrant", type: "rsync",
+    rsync__exclude: [".git/", "gitlab/", "jenkins/", "sonarqube/"]
 end

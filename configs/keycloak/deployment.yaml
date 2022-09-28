@@ -10,6 +10,12 @@ spec:
   selector:
     matchLabels:
       app: keycloak
+  strategy: 
+    type: "RollingUpdate"
+    rollingUpdate: 
+      maxSurge: 1
+      maxUnavailable: 1
+  minReadySeconds: 5
   template:
     metadata:
       labels:
@@ -18,6 +24,7 @@ spec:
       containers:
       - name: keycloak
         image: quay.io/keycloak/keycloak:19.0.2
+        imagePullPolicy: Always
         args: ["start-dev"]
         env:
         - name: KEYCLOAK_ADMIN
@@ -26,6 +33,18 @@ spec:
           value: "admin"
         - name: KC_PROXY
           value: "edge"
+        - name: KEYCLOAK_FRONTEND_URL
+          value: "http://keycloak.kube.local/auth"
+        - name: DB_VENDOR
+          value: "postgres"
+        - name: DB_ADDR
+          value: "10.0.2.2"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_USER
+          value: "postgres"
+        - name: DB_PASSWORD
+          value: "SomeSecurePassword"
         ports:
         - name: http
           containerPort: 8080

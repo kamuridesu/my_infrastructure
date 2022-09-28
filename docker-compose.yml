@@ -22,7 +22,7 @@ services:
           cpus: "3"
 
   db:
-    image: postgres:14
+    image: postgres:10
     restart: always
     environment:
       POSTGRES_PASSWORD: "SomeSecurePassword"
