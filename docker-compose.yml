@@ -3,6 +3,7 @@ services:
   gitlab:
     image: "gitlab/gitlab-ee:latest"
     restart: always
+    container_name: infra_gitlab
     ports:
       - 80:80
       - 443:443
@@ -24,6 +25,7 @@ services:
   db:
     image: postgres:10
     restart: always
+    container_name: infra_postgres
     environment:
       POSTGRES_PASSWORD: "SomeSecurePassword"
     ports:
