@@ -13,5 +13,5 @@ Vagrant.configure("2") do |config|
   end
   config.vm.provision "shell", path: "configs/shell/provision.sh"
   config.vm.synced_folder ".", "/vagrant", type: "rsync",
-    rsync__exclude: [".git/", "gitlab/", "jenkins/", "sonarqube/"]
+    rsync__exclude: [".git/", "data/", "data/*", "data/**", "data/postgres"]
 end

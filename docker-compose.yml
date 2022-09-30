@@ -1,18 +1,41 @@
 version: "3"
 services:
+
+  haproxy:
+    build: .
+    container_name: infra_haproxy
+    ports:
+      - 80:80
+      - 443:443
+      - 81:81
+    sysctls:
+      - net.ipv4.ip_unprivileged_port_start=0
+    restart: unless-stopped
+    networks:
+      infra_network:
+        aliases:
+          - infra_haproxy
+    # entrypoint: "haproxy"
+    # command: "haproxy"
+    
+
   gitlab:
     image: "gitlab/gitlab-ee:latest"
     restart: always
     container_name: infra_gitlab
     ports:
-      - 80:80
-      - 443:443
-      - 2223:22
+      - 8080:80
+      - 8443:443
+      - 8022:22
     volumes:
-      - ./gitlab/config:/etc/gitlab
-      - ./gitlab/logs:/var/log/gitlab
-      - ./gitlab/data:/var/opt/gitlab
+      - ./data/gitlab/config:/etc/gitlab
+      - ./data/gitlab/logs:/var/log/gitlab
+      - ./data/gitlab/data:/var/opt/gitlab
     shm_size: '256m'
+    networks:
+      infra_network:
+        aliases:
+          - infra_gitlab
     deploy:
       resources:
         limits:
@@ -30,6 +53,8 @@ services:
       POSTGRES_PASSWORD: "SomeSecurePassword"
     ports:
       - 5432:5432
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
     deploy:
       resources:
         limits:
@@ -38,3 +63,23 @@ services:
         reservations:
           memory: "2G"
           cpus: "1"
+    networks:
+      infra_network:
+        aliases:
+          - infra_postgres
+
+  pg_admin:
+    image: dpage/pgadmin4
+    restart: always
+    ports:
+      - 8880:80
+    networks:
+      infra_network:
+        aliases:
+          - infra_pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=admin123
+
+networks:
+  infra_network:

@@ -1,6 +1,13 @@
 PATH="$PATH:/usr/games"
 export PATH
 
+which kubeadm 2>&1 > /dev/null
+PROVISIONED="FALSE"
+if [[ -f /etc/kubernetes/admin.conf ]]; then
+    PROVISIONED="TRUE"
+    export KUBECONFIG=/etc/kubernetes/admin.conf
+fi
+
 update_system() {
     apt-get update
     apt-get upgrade -y
@@ -9,6 +16,7 @@ update_system() {
 }
 
 install_kubernetes() {
+    cowsay Installing Kubernetes...
     touch /etc/apt/sources.list.d/kubernetes.list
     echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" > /etc/apt/sources.list.d/kubernetes.list
     curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
@@ -19,6 +27,7 @@ install_kubernetes() {
 }
 
 install_containerd() {
+    cowsay Installing containerd...
     curl -L https://github.com/containerd/containerd/releases/download/v1.6.8/containerd-1.6.8-linux-amd64.tar.gz --output /tmp/containerd-1.6.8-linux-amd64.tar.gz
     cd /tmp/
     tar Cxzvf /usr/local containerd-1.6.8-linux-amd64.tar.gz
@@ -30,12 +39,14 @@ install_containerd() {
 }
 
 install_runc() {
+    cowsay Installing runc...
     curl -L https://github.com/opencontainers/runc/releases/download/v1.1.4/runc.amd64 --output /tmp/runc.amd64
     cd /tmp/
     install -m 755 runc.amd64 /usr/local/sbin/runc
 }
 
 install_cni_plugins() {
+    cowsay Installing cni plugins...
     curl -L https://github.com/containernetworking/plugins/releases/download/v1.1.1/cni-plugins-linux-amd64-v1.1.1.tgz --output /tmp/cni-plugins-linux-amd64-v1.1.1.tgz
     cd /tmp/
     mkdir -p /opt/cni/bin
@@ -43,25 +54,37 @@ install_cni_plugins() {
 }
 
 setup_containerd() {
+    cowsay Setting up containerd
     mkdir -p /etc/containerd/
     containerd config default > /etc/containerd/config.toml
     sed -i "s/systemdCgroup = false/systemdCgroup = true/" /etc/containerd/config.toml
 }
 
 start_kube() {
-    kubeadm init --pod-network-cidr=192.168.0.0/16 --apiserver-cert-extra-sans=192.168.56.10
+    if [[ "$PROVISIONED" == "FALSE" ]]; then
+        cowsay Starting kubeadm
+        kubeadm init --pod-network-cidr=192.168.0.0/16 --apiserver-cert-extra-sans=192.168.56.100
+        export KUBECONFIG=/etc/kubernetes/admin.conf
+        cp /etc/kubernetes/admin.conf ~
+        mkdir -p /home/vagrant/.kube/
+        touch /home/vagrant/.kube/config
+        cat /etc/kubernetes/admin.conf > /home/vagrant/.kube/config
+        MASTER_NAME=$(kubectl get nodes | head -2 | tail -1 | awk '{print $1}')
+        kubectl taint node $MASTER_NAME node-role.kubernetes.io/control-plane:NoSchedule-
+        cowsay Kube started!
+    fi
     export KUBECONFIG=/etc/kubernetes/admin.conf
-    MASTER_NAME=$(kubectl get nodes | head -2 | tail -1 | awk '{print $1}')
-    kubectl taint node $MASTER_NAME node-role.kubernetes.io/control-plane:NoSchedule-
 }
 
 setup_kubernetes() {
-    install_containerd &
-    install_runc &
-    install_cni_plugins &
-    install_kubernetes
-    sleep 60
-    setup_containerd
+    if [[ "$PROVISIONED" == "FALSE" ]]; then
+        install_containerd &
+        install_runc &
+        install_cni_plugins &
+        install_kubernetes
+        sleep 60
+        setup_containerd
+    fi
     start_kube
 }
 
@@ -78,6 +101,7 @@ setup_calico() {
     cowsay Installing calico... # https://projectcalico.docs.tigera.io/getting-started/kubernetes/self-managed-onprem/onpremises
     kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.24.1/manifests/tigera-operator.yaml
     kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.24.1/manifests/custom-resources.yaml
+    cowsay Waiting resources creation...
     sleep 30
 }
 
@@ -109,20 +133,17 @@ setup_argocd() {
     sleep 30 # wait for the services to start, increase this if you want
     # Files in the configs/argocd folder
     # Reference for ingresses: https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/
-    kubectl apply -n argocd -f /vagrant/configs/argocd/gateway.yaml
-    kubectl apply -n argocd -f /vagrant/configs/argocd/virtualservice.yaml
+    kubectl apply -n argocd -f /vagrant/configs/argocd/
 }
 
 setup_keycloak() {
     # Deploy keycloak
     kubectl create namespace keycloak
     kubectl label namespace keycloak istio-injection=enabled --overwrite
-    kubectl apply -n keycloak -f /vagrant/configs/keycloak/service.yaml
-    kubectl apply -n keycloak -f /vagrant/configs/keycloak/deployment.yaml
+    kubectl apply -n keycloak -f /vagrant/configs/keycloak/
     cowsay Waiting Keycloak...
     sleep 60 # keycloak takes some time to boot, ideally one or two minutes in my cpu
-    kubectl apply -n keycloak -f /vagrant/configs/keycloak/gateway.yaml
-    kubectl apply -n keycloak -f /vagrant/configs/keycloak/virtualservice.yaml
+    # kubectl create secret generic keycloak-db-secret --from-literal=username=postgres --from-literal=password=SomeSecurePassword
 }
 
 setup_haproxy() {
@@ -140,20 +161,30 @@ setup_haproxy() {
     /etc/init.d/haproxy restart  # restart if started
 }
 
+create_dns_entries() {
+    cowsay Adding /etc/hosts entries
+    echo "127.0.0.1    argocd.kube.local" >> /etc/hosts
+    echo "127.0.0.1    keycloak.kube.local" >> /etc/hosts
+    echo "127.0.0.1    kube.local" >> /etc/hosts
+    echo "10.0.2.2    gitlab.kube.local" >> /etc/hosts
+    echo "10.0.2.2    postgres.kube.local" >> /etc/hosts
+}
 
 _done() {
     ARGO_SECRET=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
     cowsay "Done! ArgoCD admin secret: $ARGO_SECRET"
 }
 
-
 main() {
-    update_system
-    install_helm &
-    setup_kubernetes
-    setup_calico
-    setup_istio
-    setup_argocd
+    if [[ "$PROVISIONED" == "FALSE" ]]; then
+        update_system
+        install_helm &
+        setup_kubernetes
+        create_dns_entries
+        setup_calico
+        setup_istio
+        setup_argocd
+    fi
     setup_keycloak
     setup_haproxy
     _done

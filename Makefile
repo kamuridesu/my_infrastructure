@@ -6,3 +6,6 @@ start:
 
 reload_kube:
 	vagrant provision
+
+wipe:
+	cowsay -fskeleton "Removind Docker volumes..." && sudo rm -rf ./data/*

@@ -1,7 +1,7 @@
 . $(pwd)/configs/shell/common.sh
 
 setup_gitlab() {
-    while [[ "$(curl -Ls -o /dev/null -w ''%{http_code}'' http://localhost)" != "200" ]]; do
+    while [[ "$(curl -Ls -o /dev/null -w ''%{http_code}'' http://gitlab.kube.local)" != "200" ]]; do
         cowsay "Waiting Gitlab..."
         sleep 5
     done
