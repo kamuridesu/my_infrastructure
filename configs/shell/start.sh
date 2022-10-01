@@ -27,5 +27,8 @@ setup_gitlab
 tf_apply_configs
 cowsay "Provisioning minikube..."
 vagrant up
+mkdir -p $HOME/.config/OpenLens/kubeconfigs/
+vagrant ssh -c "cat /home/vagrant/.kube/config" > $HOME/.config/OpenLens/kubeconfigs/vagrant_config
+sed -ri "s/https:\/\/[0-9]+.[0-9]+.[0-9]+.[0-9]+/https:\/\/192.168.56.100/" $HOME/.config/OpenLens/kubeconfigs/vagrant_config
 GITLAB_PASSWORD=$(docker exec  infra_gitlab cat /etc/gitlab/initial_root_password | grep Password | tail -1)
 cowsay "Done! Gitlab initial password: $GITLAB_PASSWORD"

@@ -133,7 +133,8 @@ setup_argocd() {
     sleep 30 # wait for the services to start, increase this if you want
     # Files in the configs/argocd folder
     # Reference for ingresses: https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/
-    kubectl apply -n argocd -f /vagrant/configs/argocd/
+    kubectl apply -n argocd -f /vagrant/configs/argocd/gateway.yaml
+    kubectl apply -n argocd -f /vagrant/configs/argocd/virtualservice.yaml
 }
 
 setup_keycloak() {
@@ -156,7 +157,7 @@ setup_haproxy() {
     export INGRESS_HOST=$(kubectl get po -l istio=ingressgateway -n istio-ingress -o jsonpath='{.items[0].status.hostIP}')
 
     mkdir -p /etc/haproxy/  # make sure that the folder exists
-    cat /vagrant/configs/haproxy/haproxy.cfg | envsubst > /etc/haproxy/haproxy.cfg  # replace the variables from our env
+    cat /vagrant/configs/haproxy_k8s/haproxy.cfg | envsubst > /etc/haproxy/haproxy.cfg  # replace the variables from our env
     /etc/init.d/haproxy start  # start haproxy
     /etc/init.d/haproxy restart  # restart if started
 }
