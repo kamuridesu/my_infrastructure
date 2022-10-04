@@ -6,25 +6,30 @@ variable "gitlab_token" {
 variable "gitlab_base_url" {
   description = "gitlab base api url"
   type        = string
-  # default = "https://gitlab.com/api/v4"
+  default = "https://gitlab.com/api/v4"
 }
 
 variable "keycloak_deployment_path" {
-  description = "deployment path"
+  description = "keycloak deployment path"
   type        = string
 }
 
 variable "keycloak_service_path" {
-  description = "service path"
+  description = "keycloak service path"
   type        = string
 }
 
 variable "keycloak_virtualservice_path" {
-  description = "virtualservice path"
+  description = "keycloak virtualservice path"
   type        = string
 }
 
 variable "keycloak_gateway_path" {
-  description = "gateway path"
+  description = "keycloak gateway path"
+  type        = string
+}
+
+variable "keycloak_application_path" {
+  description = "Keycloak argocd application"
   type        = string
 }

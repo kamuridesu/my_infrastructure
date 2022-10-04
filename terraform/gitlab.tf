@@ -19,50 +19,25 @@ resource "gitlab_group" "devops" {
   description = "DevOps IAC Files"
 }
 
-resource "gitlab_project" "keycloak" {
-  name             = "keycloak"
-  description      = "keycloak iac files"
+resource "gitlab_project" "argocd" {
+  name             = "argocd"
+  description      = "argocd gitops files"
   namespace_id     = gitlab_group.devops.id
   visibility_level = "private"
+} 
+
+resource "gitlab_user" "argocd" {
+  name             = "ArgoCD"
+  username         = "argocd"
+  password         = "superPassword"
+  email            = "argocd@kube.local"
+  skip_confirmation = true
+  reset_password   = false
 }
 
+resource "gitlab_group_membership" "argocd_devops" {
+  group_id = gitlab_group.devops.id
+  user_id = gitlab_user.argocd.id
+  access_level = "maintainer"
+}
 # Still searching how to upload a list of files with only one resource
-resource "gitlab_repository_file" "deployment" {
-  project        = gitlab_project.keycloak.id
-  file_path      = "deployment.yaml"
-  branch         = "main"
-  content        = file(var.keycloak_deployment_path)
-  author_email   = "gitlab@gitlab.com"
-  author_name    = "Terraform"
-  commit_message = "Initial commit"
-}
-
-resource "gitlab_repository_file" "service" {
-  project        = gitlab_project.keycloak.id
-  file_path      = "service.yaml"
-  branch         = "main"
-  content        = file(var.keycloak_service_path)
-  author_email   = "gitlab@gitlab.com"
-  author_name    = "Terraform"
-  commit_message = "Initial commit"
-}
-
-resource "gitlab_repository_file" "virtualservice" {
-  project        = gitlab_project.keycloak.id
-  file_path      = "virtualservice.yaml"
-  branch         = "main"
-  content        = file(var.keycloak_virtualservice_path)
-  author_email   = "gitlab@gitlab.com"
-  author_name    = "Terraform"
-  commit_message = "Initial commit"
-}
-
-resource "gitlab_repository_file" "gateway" {
-  project        = gitlab_project.keycloak.id
-  file_path      = "gateway.yaml"
-  branch         = "main"
-  content        = file(var.keycloak_gateway_path)
-  author_email   = "gitlab@gitlab.com"
-  author_name    = "Terraform"
-  commit_message = "Initial commit"
-}

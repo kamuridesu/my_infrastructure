@@ -11,6 +11,7 @@ spec:
         - ip: "10.0.2.2"
           hostnames:
           - "postgres.kube.local"
+          - "gitlab.kube.local"
         - ip: "192.168.56.100"
           hostnames:
             - "argocd.kube.local"

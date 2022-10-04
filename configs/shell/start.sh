@@ -7,6 +7,8 @@ setup_gitlab() {
     done
     cowsay "Generating token..."
     docker exec infra_gitlab gitlab-rails runner "token = User.find_by_username('root').personal_access_tokens.create(scopes: [:api, :sudo, :read_api, :read_user, :read_repository, :write_repository], name: 'Automation token'); token.set_token('$TF_VAR_gitlab_token'); token.save!"
+    cowsay "Creating ArgoCD user..."
+    docker exec infra_gitlab gitlab-rails runner "u = User.new(username: 'Argo', email: 'argocd@kube.local', name: 'ArgoCD', password: 'password', password_confirmation: 'password');u.skip_confirmation!;u.save!"
 }
 
 tf_apply_configs() {
