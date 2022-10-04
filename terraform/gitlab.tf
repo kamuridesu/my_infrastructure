@@ -24,20 +24,27 @@ resource "gitlab_project" "argocd" {
   description      = "argocd gitops files"
   namespace_id     = gitlab_group.devops.id
   visibility_level = "private"
-} 
+}
 
 resource "gitlab_user" "argocd" {
-  name             = "ArgoCD"
-  username         = "argocd"
-  password         = "superPassword"
-  email            = "argocd@kube.local"
+  name              = "ArgoCD"
+  username          = "argocd"
+  password          = "superPassword"
+  email             = "argocd@kube.local"
   skip_confirmation = true
-  reset_password   = false
+  reset_password    = false
 }
 
 resource "gitlab_group_membership" "argocd_devops" {
-  group_id = gitlab_group.devops.id
-  user_id = gitlab_user.argocd.id
+  group_id     = gitlab_group.devops.id
+  user_id      = gitlab_user.argocd.id
   access_level = "maintainer"
+}
+
+resource "gitlab_user_sshkey" "argocd_ssh_key" {
+  user_id = gitlab_user.argocd.id
+  title   = "Argocd Key"
+  key     = file(var.argocd_ssh_key)
+  
 }
 # Still searching how to upload a list of files with only one resource

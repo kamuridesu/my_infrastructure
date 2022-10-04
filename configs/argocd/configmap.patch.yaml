@@ -1,8 +1,8 @@
 data:
-  url: https://argocd.kube.local
+  url: http://argocd.kube.local
   oidc.config: |
     name: Keycloak
-    issuer: https://keycloak.kube.local/realms/main
+    issuer: http://keycloak.kube.local/realms/main
     clientID: argocd
     clientSecret: $oidc.keycloak.clientSecret
     requestedScopes: ["openid", "profile", "email", "argocd_clients"]

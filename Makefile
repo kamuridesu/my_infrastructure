@@ -8,7 +8,8 @@ reload_kube:
 	vagrant provision
 
 wipe:
-	cowsay -fskeleton "Removind Docker volumes..." && sudo rm -rf ./data/*
+	cowsay -fskeleton "Removind Docker volumes..."
+	sudo rm -rf ./data/*
 
 backup_db:
 	docker exec -it -u postgres infra_postgres pg_dumpall > ./configs/postgres/backup.sql

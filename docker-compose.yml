@@ -26,7 +26,7 @@ services:
     ports:
       - 8080:80
       - 8443:443
-      - 8022:22
+      - 22:22
     volumes:
       - ./data/gitlab/config:/etc/gitlab
       - ./data/gitlab/logs:/var/log/gitlab

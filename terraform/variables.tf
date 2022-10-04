@@ -6,7 +6,7 @@ variable "gitlab_token" {
 variable "gitlab_base_url" {
   description = "gitlab base api url"
   type        = string
-  default = "https://gitlab.com/api/v4"
+  default     = "https://gitlab.com/api/v4"
 }
 
 variable "keycloak_deployment_path" {
@@ -31,5 +31,10 @@ variable "keycloak_gateway_path" {
 
 variable "keycloak_application_path" {
   description = "Keycloak argocd application"
+  type        = string
+}
+
+variable "argocd_ssh_key" {
+  description = "Argocd public ssh key"
   type        = string
 }

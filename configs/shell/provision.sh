@@ -128,7 +128,8 @@ setup_argocd() {
     kubectl create namespace argocd
     kubectl label namespace argocd istio-injection=enabled --overwrite
     kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-    kubectl patch deployment -n argocd argocd-server --patch-file /vagrant/configs/argocd/deployment.patch.yaml # patch argocd-server to avoid tls errors
+    kubectl patch deployment -n argocd argocd-server --patch-file /vagrant/configs/argocd/argocd-server.deployment.patch.yaml # patch argocd-server to avoid tls errors
+    kubectl patch deployment -n argocd argocd-repo-server --patch-file /vagrant/configs/argocd/argocd-repo-server.deployment.patch.yaml  # add hostaliases
     kubectl patch secret -n argocd argocd-secret --patch-file /vagrant/configs/argocd/secret.patch.yaml # patch argocd-secret to add keycloak credential
     kubectl patch configmap -n argocd argocd-cm --patch-file /vagrant/configs/argocd/configmap.patch.yaml # patch argocd-cm to add keycloak info
     kubectl patch configmap -n argocd argocd-rbac-cm --patch-file /vagrant/configs/argocd/rbac.patch.yaml # patch argocd-rbac-cm add keycloak roles

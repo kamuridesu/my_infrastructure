@@ -2,13 +2,11 @@
 
 setup_gitlab() {
     while [[ "$(curl -Ls -o /dev/null -w ''%{http_code}'' http://gitlab.kube.local)" != "200" ]]; do
-        cowsay "Waiting Gitlab..."
+        cowsay -fsmall "Waiting Gitlab..."
         sleep 5
     done
     cowsay "Generating token..."
     docker exec infra_gitlab gitlab-rails runner "token = User.find_by_username('root').personal_access_tokens.create(scopes: [:api, :sudo, :read_api, :read_user, :read_repository, :write_repository], name: 'Automation token'); token.set_token('$TF_VAR_gitlab_token'); token.save!"
-    cowsay "Creating ArgoCD user..."
-    docker exec infra_gitlab gitlab-rails runner "u = User.new(username: 'Argo', email: 'argocd@kube.local', name: 'ArgoCD', password: 'password', password_confirmation: 'password');u.skip_confirmation!;u.save!"
 }
 
 tf_apply_configs() {
@@ -17,7 +15,9 @@ tf_apply_configs() {
     # terraform init
     terraform apply -var-file=variables.tfvars -auto-approve
     if [[ $? -ne 0 ]]; then
-        cowsay -fmutilated "FATAL: Failed to provision Gitlab resources!"
+        cowsay -fmutilated "FATAL: Failed to provision Gitlab resources! Reverting changes..."
+        cd ..
+        sh $(pwd)/configs/shell/clean.sh
         exit 1
     fi
     cd ..
