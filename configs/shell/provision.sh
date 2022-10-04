@@ -128,13 +128,18 @@ setup_argocd() {
     kubectl create namespace argocd
     kubectl label namespace argocd istio-injection=enabled --overwrite
     kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-    kubectl patch deployment -n argocd argocd-server --patch-file /vagrant/configs/argocd/patch.yaml # patch argocd-server to avoid tls errors
+    kubectl patch deployment -n argocd argocd-server --patch-file /vagrant/configs/argocd/deplyment.patch.yaml # patch argocd-server to avoid tls errors
+    kubectl patch secret -n argocd argocd-secret --patch-file /vagrant/configs/argocd/secret.patch.yaml # patch argocd-secret to add keycloak credential
+    kubectl patch configmap -n argocd argocd-cm --patch-file /vagrant/configs/argocd/configmap.patch.yaml # patch argocd-cm to add keycloak info
+    kubectl patch configmap -n argocd argocd-rbac-cm --patch-file /vagrant/configs/argocd/rbac.patch.yaml # patch argocd-rbac-cm add keycloak roles
     cowsay Waiting ArgoCD...
     sleep 30 # wait for the services to start, increase this if you want
     # Files in the configs/argocd folder
     # Reference for ingresses: https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/
     kubectl apply -n argocd -f /vagrant/configs/argocd/gateway.yaml
     kubectl apply -n argocd -f /vagrant/configs/argocd/virtualservice.yaml
+
+    kubectl rollout restart deployment argocd-server -n argocd  # Restarts argocd-server to apply the patches
 }
 
 setup_keycloak() {

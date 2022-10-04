@@ -1,0 +1,3 @@
+data:
+  policy.csv: |
+    g, ArgoCDAdmins, role:admin

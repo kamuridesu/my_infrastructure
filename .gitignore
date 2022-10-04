@@ -4,5 +4,4 @@ sonarqube
 .vagrant
 .terraform
 *.tfstate*
-postgres
 data
