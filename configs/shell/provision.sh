@@ -24,6 +24,7 @@ install_kubernetes() {
     apt-get install -y kubelet kubeadm kubectl kubernetes-cni
 
     sysctl net.bridge.bridge-nf-call-iptables=1
+    sleep 30
 }
 
 install_containerd() {
@@ -128,30 +129,35 @@ setup_argocd() {
     kubectl create namespace argocd
     kubectl label namespace argocd istio-injection=enabled --overwrite
     kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-    kubectl patch deployment -n argocd argocd-server --patch-file /vagrant/configs/argocd/argocd-server.deployment.patch.yaml # patch argocd-server to avoid tls errors
-    kubectl patch deployment -n argocd argocd-repo-server --patch-file /vagrant/configs/argocd/argocd-repo-server.deployment.patch.yaml  # add hostaliases
-    kubectl patch secret -n argocd argocd-secret --patch-file /vagrant/configs/argocd/secret.patch.yaml # patch argocd-secret to add keycloak credential
-    kubectl patch configmap -n argocd argocd-cm --patch-file /vagrant/configs/argocd/configmap.patch.yaml # patch argocd-cm to add keycloak info
-    kubectl patch configmap -n argocd argocd-rbac-cm --patch-file /vagrant/configs/argocd/rbac.patch.yaml # patch argocd-rbac-cm add keycloak roles
+    kubectl apply -n argocd -f /vagrant/configs/argocd/resources/gateway.yaml
+    kubectl apply -n argocd -f /vagrant/configs/argocd/resources/virtualservice.yaml
+    cp /vagrant/configs/argocd/resources/repositories.yaml /tmp/
+    ssh-keyscan gitlab.kube.local | sed -e 's/^/      /' >> /tmp/repositories.yaml
+    ssh-keyscan 10.0.2.2 | sed -e 's/^/      /' >> /tmp/repositories.yaml
+    kubectl apply -n argocd -f /tmp/repositories.yaml
+    kubectl patch deployment -n argocd argocd-server --patch-file /vagrant/configs/argocd/patches/argocd-server.deployment.patch.yaml # patch argocd-server to avoid tls errors
+    kubectl patch deployment -n argocd argocd-repo-server --patch-file /vagrant/configs/argocd/patches/argocd-repo-server.deployment.patch.yaml  # add hostaliases
+    kubectl patch secret -n argocd argocd-secret --patch-file /vagrant/configs/argocd/patches/secret.patch.yaml # patch argocd-secret to add keycloak credential
+    kubectl patch configmap -n argocd argocd-cm --patch-file /vagrant/configs/argocd/patches/configmap.patch.yaml # patch argocd-cm to add keycloak info
+    kubectl patch configmap -n argocd argocd-rbac-cm --patch-file /vagrant/configs/argocd/patches/rbac.patch.yaml # patch argocd-rbac-cm add keycloak roles
+    kubectl apply -n argocd -f /vagrant/configs/gitlab/applications/infra.application.yaml
     cowsay Waiting ArgoCD...
     sleep 30 # wait for the services to start, increase this if you want
     # Files in the configs/argocd folder
     # Reference for ingresses: https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/
-    kubectl apply -n argocd -f /vagrant/configs/argocd/gateway.yaml
-    kubectl apply -n argocd -f /vagrant/configs/argocd/virtualservice.yaml
 
     kubectl rollout restart deployment argocd-server -n argocd  # Restarts argocd-server to apply the patches
 }
 
-setup_keycloak() {
-    # Deploy keycloak
-    kubectl create namespace keycloak
-    kubectl label namespace keycloak istio-injection=enabled --overwrite
-    kubectl apply -n keycloak -f /vagrant/configs/keycloak/
-    cowsay Waiting Keycloak...
-    sleep 60 # keycloak takes some time to boot, ideally one or two minutes in my cpu
-    # kubectl create secret generic keycloak-db-secret --from-literal=username=postgres --from-literal=password=SomeSecurePassword
-}
+# setup_keycloak() {
+#     # Deploy keycloak
+#     kubectl create namespace keycloak
+#     kubectl label namespace keycloak istio-injection=enabled --overwrite
+#     kubectl apply -n keycloak -f /vagrant/configs/gitlab/infra/keycloak/
+#     cowsay Waiting Keycloak...
+#     sleep 60 # keycloak takes some time to boot, ideally one or two minutes in my cpu
+#     # kubectl create secret generic keycloak-db-secret --from-literal=username=postgres --from-literal=password=SomeSecurePassword
+# }
 
 setup_haproxy() {
     cowsay Setting up HAProxy

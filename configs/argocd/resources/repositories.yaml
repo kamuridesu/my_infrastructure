@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: private-repo
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+    app.kubernetes.io/part-of: argocd
+stringData:
+  type: git
+  url: git@gitlab.kube.local:devops/argocd.git
+  sshPrivateKey: |
+    -----BEGIN OPENSSH PRIVATE KEY-----
+    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
+    -----END OPENSSH PRIVATE KEY-----
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-ssh-known-hosts-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  ssh_known_hosts: |

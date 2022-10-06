@@ -8,7 +8,7 @@ reload_kube:
 	vagrant provision
 
 wipe:
-	cowsay -fskeleton "Removind Docker volumes..."
+	cowsay -fskeleton "Deleting Docker volumes..."
 	sudo rm -rf ./data/*
 
 backup_db:

@@ -5,6 +5,6 @@ terraform destroy -var-file=variables.tfvars -auto-approve
 rm -rf *.tfstate*
 cd ..
 docker-compose down
-cowsay -fskeleton "Removing minikube VM..."
+cowsay -fskeleton "Removing K8S VM..."
 vagrant destroy -f
 cowsay -fskeleton "Done!"
