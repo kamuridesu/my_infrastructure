@@ -1,0 +1,3 @@
+Host gitlab.kube.local
+    HostName gitlab.kube.local
+    IdentityFile ~/.ssh/gitlab

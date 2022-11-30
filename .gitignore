@@ -4,3 +4,5 @@ sonarqube
 .terraform
 *.tfstate*
 data
+output.txt
+vscode

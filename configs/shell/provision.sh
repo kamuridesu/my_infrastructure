@@ -11,8 +11,15 @@ fi
 update_system() {
     apt-get update
     apt-get upgrade -y
-    apt-get install -y haproxy cowsay htop vim apt-transport-https ca-certificates curl software-properties-common gnupg docker docker.io
+    apt-get install -y haproxy cowsay htop vim apt-transport-https ca-certificates curl software-properties-common gnupg docker docker.io git
     sysctl net.bridge.bridge-nf-call-iptables=1
+}
+
+setup_git_argocd_user() {
+    git config --global user.name "argocd"
+    git config --global user.email "argocd@kube.local"
+    mkdir -p ~/.ssh/
+    cp /vagrant/configs/gitlab/ssh/config /vagrant/configs/gitlab/ssh/gitlab ~/.ssh
 }
 
 install_kubernetes() {
@@ -102,8 +109,11 @@ setup_calico() {
     cowsay Installing calico... # https://projectcalico.docs.tigera.io/getting-started/kubernetes/self-managed-onprem/onpremises
     kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.24.1/manifests/tigera-operator.yaml
     kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.24.1/manifests/custom-resources.yaml
-    cowsay Waiting resources creation...
-    sleep 30
+    while [[ "$(kubectl get pods -n calico-apiserver | tail -1 | awk '{print $3}')" != "Running "]]; do
+        cowsay Waiting Calico resources...
+        sleep 5
+    done
+    cowsay Calico is running!
 }
 
 setup_istio() {
@@ -119,8 +129,11 @@ setup_istio() {
     kubectl create namespace istio-ingress
     kubectl label namespace istio-ingress istio-injection=enabled # https://istio.io/latest/docs/setup/additional-setup/sidecar-injection/#automatic-sidecar-injection
     helm install istio-ingressgateway istio/gateway -n istio-ingress
-    cowsay Waiting Istio...
-    sleep 30  # wait 30 seconds for the services to be up
+    while [[ "$(kubectl get pods -n istio-ingress | tail -1 | awk '{print $3}')" != "Running "]]; do
+        cowsay Waiting Istio...
+        sleep 5
+    done
+    cowsay Istio started!
 }
 
 setup_argocd() {
@@ -142,22 +155,17 @@ setup_argocd() {
     kubectl patch configmap -n argocd argocd-rbac-cm --patch-file /vagrant/configs/argocd/patches/rbac.patch.yaml # patch argocd-rbac-cm add keycloak roles
     kubectl apply -n argocd -f /vagrant/configs/gitlab/applications/infra.application.yaml
     cowsay Waiting ArgoCD...
-    sleep 30 # wait for the services to start, increase this if you want
+    while [[ "$(kubectl get pods -n argocd| tail -1 | awk '{print $3}')" != "Running "]]; do
+        cowsay Waiting Argocd...
+        sleep 5
+    done
+    cowsay Argocd is running!
     # Files in the configs/argocd folder
     # Reference for ingresses: https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/
 
     kubectl rollout restart deployment argocd-server -n argocd  # Restarts argocd-server to apply the patches
 }
 
-# setup_keycloak() {
-#     # Deploy keycloak
-#     kubectl create namespace keycloak
-#     kubectl label namespace keycloak istio-injection=enabled --overwrite
-#     kubectl apply -n keycloak -f /vagrant/configs/gitlab/infra/keycloak/
-#     cowsay Waiting Keycloak...
-#     sleep 60 # keycloak takes some time to boot, ideally one or two minutes in my cpu
-#     # kubectl create secret generic keycloak-db-secret --from-literal=username=postgres --from-literal=password=SomeSecurePassword
-# }
 
 setup_haproxy() {
     cowsay Setting up HAProxy
@@ -179,8 +187,8 @@ create_dns_entries() {
     echo "127.0.0.1    argocd.kube.local" >> /etc/hosts
     echo "127.0.0.1    keycloak.kube.local" >> /etc/hosts
     echo "127.0.0.1    kube.local" >> /etc/hosts
-    echo "10.0.2.2    gitlab.kube.local" >> /etc/hosts
-    echo "10.0.2.2    postgres.kube.local" >> /etc/hosts
+    echo "10.0.2.2     gitlab.kube.local" >> /etc/hosts
+    echo "10.0.2.2     postgres.kube.local" >> /etc/hosts
 }
 
 _done() {
@@ -191,6 +199,7 @@ _done() {
 main() {
     if [[ "$PROVISIONED" == "FALSE" ]]; then
         update_system
+        setup_git_argocd_user
         install_helm &
         setup_kubernetes
         create_dns_entries

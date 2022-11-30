@@ -68,19 +68,5 @@ services:
         aliases:
           - infra_postgres
 
-  pg_admin:
-    image: dpage/pgadmin4
-    container_name: infra_pgadmin
-    restart: always
-    ports:
-      - 8880:80
-    networks:
-      infra_network:
-        aliases:
-          - infra_pgadmin
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
-      - PGADMIN_DEFAULT_PASSWORD=admin
-
 networks:
   infra_network:
