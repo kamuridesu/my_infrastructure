@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: apps
+  name: notasite
+  labels:
+    app: notasite
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notasite
+  template:
+    metadata:
+      labels:
+        app: notasite
+    spec:
+      containers:
+        - name: notasite
+          image: registry.hub.docker.com/kamuri/notesite:0.0.2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+          resources:
+            limits:
+              cpu: "100m"
+              memory: "60Mi"
+            requests:
+              cpu: "50m"
+              memory: "30Mi"

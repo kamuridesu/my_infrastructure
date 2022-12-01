@@ -20,7 +20,7 @@ spec:
       - ip: "10.0.2.2"
         hostnames:
         - "postgres.kube.local"
-      - ip: "192.168.56.100"
+      - ip: "10.0.1.100"
         hostnames:
           - "argocd.kube.local"
       containers:

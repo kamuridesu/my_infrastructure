@@ -15,8 +15,6 @@ services:
       infra_network:
         aliases:
           - infra_haproxy
-    # entrypoint: "haproxy"
-    # command: "haproxy"
     
 
   gitlab:
@@ -39,7 +37,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: "5G"
+          memory: "6G"
           cpus: "4"
         reservations:
           memory: "4G"
@@ -58,11 +56,11 @@ services:
     deploy:
       resources:
         limits:
-          memory: "3G"
-          cpus: "2"
+          memory: "1G"
+          cpus: "0.5"
         reservations:
-          memory: "2G"
-          cpus: "1"
+          memory: "1G"
+          cpus: "0.5"
     networks:
       infra_network:
         aliases:

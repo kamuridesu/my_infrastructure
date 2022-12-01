@@ -5,4 +5,4 @@ sonarqube
 *.tfstate*
 data
 output.txt
-vscode
+.vscode

@@ -71,7 +71,7 @@ setup_containerd() {
 start_kube() {
     if [[ "$PROVISIONED" == "FALSE" ]]; then
         cowsay Starting kubeadm
-        kubeadm init --pod-network-cidr=192.168.0.0/16 --apiserver-cert-extra-sans=192.168.56.100
+        kubeadm init --pod-network-cidr=192.168.0.0/16 --apiserver-cert-extra-sans=10.0.1.100
         export KUBECONFIG=/etc/kubernetes/admin.conf
         cp /etc/kubernetes/admin.conf ~
         mkdir -p /home/vagrant/.kube/
@@ -86,12 +86,11 @@ start_kube() {
 
 setup_kubernetes() {
     if [[ "$PROVISIONED" == "FALSE" ]]; then
-        install_containerd &
-        install_runc &
-        install_cni_plugins &
-        install_kubernetes
-        sleep 60
+        install_containerd
         setup_containerd
+        install_runc
+        install_cni_plugins
+        install_kubernetes
     fi
     start_kube
 }
@@ -109,7 +108,7 @@ setup_calico() {
     cowsay Installing calico... # https://projectcalico.docs.tigera.io/getting-started/kubernetes/self-managed-onprem/onpremises
     kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.24.1/manifests/tigera-operator.yaml
     kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.24.1/manifests/custom-resources.yaml
-    while [[ "$(kubectl get pods -n calico-apiserver | tail -1 | awk '{print $3}')" != "Running "]]; do
+    while [[ "$(kubectl get pods -n calico-apiserver | tail -1 | awk '{print $3}')" != "Running" ]]; do
         cowsay Waiting Calico resources...
         sleep 5
     done
@@ -129,7 +128,7 @@ setup_istio() {
     kubectl create namespace istio-ingress
     kubectl label namespace istio-ingress istio-injection=enabled # https://istio.io/latest/docs/setup/additional-setup/sidecar-injection/#automatic-sidecar-injection
     helm install istio-ingressgateway istio/gateway -n istio-ingress
-    while [[ "$(kubectl get pods -n istio-ingress | tail -1 | awk '{print $3}')" != "Running "]]; do
+    while [[ "$(kubectl get pods -n istio-ingress | tail -1 | awk '{print $3}')" != "Running" ]]; do
         cowsay Waiting Istio...
         sleep 5
     done
@@ -155,7 +154,7 @@ setup_argocd() {
     kubectl patch configmap -n argocd argocd-rbac-cm --patch-file /vagrant/configs/argocd/patches/rbac.patch.yaml # patch argocd-rbac-cm add keycloak roles
     kubectl apply -n argocd -f /vagrant/configs/gitlab/applications/infra.application.yaml
     cowsay Waiting ArgoCD...
-    while [[ "$(kubectl get pods -n argocd| tail -1 | awk '{print $3}')" != "Running "]]; do
+    while [[ "$(kubectl get pods -n argocd| tail -1 | awk '{print $3}')" != "Running" ]]; do
         cowsay Waiting Argocd...
         sleep 5
     done
@@ -207,9 +206,8 @@ main() {
         setup_istio
         setup_argocd
     fi
-    setup_keycloak
+    # setup_keycloak
     setup_haproxy
     _done
 }
-
 main

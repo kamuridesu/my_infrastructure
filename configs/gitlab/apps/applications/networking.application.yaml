@@ -1,24 +1,16 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: keycloak
+  name: networking
   namespace: argocd
 spec:
   destination:
-    namespace: keycloak
+    namespace: apps
     server: https://kubernetes.default.svc
   project: default
   source:
-    path: infra/keycloak
+    path: apps/networking
     repoURL: git@gitlab.kube.local:devops/argocd.git
     targetRevision: main
   syncPolicy:
     automated: {}
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: keycloak
-  labels:
-    name: keycloak
-    istio-injection: enabled

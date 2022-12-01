@@ -7,4 +7,4 @@ docker-compose.yml
 Vagrantfile
 terraform
 output.txt
-vscode
+.vscode

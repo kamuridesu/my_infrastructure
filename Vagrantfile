@@ -5,7 +5,7 @@ Vagrant.configure("2") do |config|
 
   config.vm.box = "debian/buster64"
   config.vm.box_check_update = false
-  config.vm.network "private_network", ip: "192.168.56.100"
+  config.vm.network "private_network", ip: "10.0.1.100"
   #
   config.vm.provider "virtualbox" do |vb|
     vb.memory = "4000"

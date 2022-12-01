@@ -1,0 +1,20 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: apps-virtualservice
+  namespace: apps
+spec:
+  gateways:
+    - apps/apps-gateway
+  hosts:
+    - app.kube.local
+  http:
+    - match:
+      - uri:
+          prefix: "/blog"
+      route:
+        - destination:
+            host: apps.notasite.svc.cluster.local
+            port:
+              number: 8080
+          weight: 100
