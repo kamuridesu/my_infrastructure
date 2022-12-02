@@ -148,6 +148,7 @@ setup_argocd() {
     ssh-keyscan 10.0.2.2 | sed -e 's/^/      /' >> /tmp/repositories.yaml
     kubectl apply -n argocd -f /tmp/repositories.yaml
     kubectl patch deployment -n argocd argocd-server --patch-file /vagrant/configs/argocd/patches/argocd-server.deployment.patch.yaml # patch argocd-server to avoid tls errors
+    kubectl apply -n argocd -f /vagrant/configs/argocd/patches/argocd-redis.networkpolicy.patch.yaml # remove egress from argocd-redis network policy to avoid istio errors
     kubectl patch deployment -n argocd argocd-repo-server --patch-file /vagrant/configs/argocd/patches/argocd-repo-server.deployment.patch.yaml  # add hostaliases
     kubectl patch secret -n argocd argocd-secret --patch-file /vagrant/configs/argocd/patches/secret.patch.yaml # patch argocd-secret to add keycloak credential
     kubectl patch configmap -n argocd argocd-cm --patch-file /vagrant/configs/argocd/patches/configmap.patch.yaml # patch argocd-cm to add keycloak info
@@ -162,7 +163,8 @@ setup_argocd() {
     # Files in the configs/argocd folder
     # Reference for ingresses: https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/
 
-    kubectl rollout restart deployment argocd-server -n argocd  # Restarts argocd-server to apply the patches
+    kubectl rollout restart deployment argocd-server -n argocd  # Restart argocd-server to apply the patches
+    kubectl rollout restart deployment argocd-redis -n argocd  # Restart argocd-redis to apply the patches
 }
 
 
@@ -206,7 +208,6 @@ main() {
         setup_istio
         setup_argocd
     fi
-    # setup_keycloak
     setup_haproxy
     _done
 }
