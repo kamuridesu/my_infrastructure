@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: notasite
-          image: registry.hub.docker.com/kamuri/notesite:0.0.2
+          image: registry.hub.docker.com/kamuri/notasite:0.0.2
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
