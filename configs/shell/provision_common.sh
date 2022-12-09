@@ -73,6 +73,8 @@ setup_containerd() {
     mkdir -p /etc/containerd/
     containerd config default > /etc/containerd/config.toml
     sed -i "s/systemdCgroup = false/systemdCgroup = true/" /etc/containerd/config.toml
+    containerd config default > /etc/containerd/config.toml 
+    systemctl restart containerd
 }
 
 create_dns_entries() {
@@ -88,10 +90,16 @@ create_dns_entries() {
 
 setup_kubernetes() {
     if [[ "$PROVISIONED" == "FALSE" ]]; then
-        install_containerd
-        setup_containerd
-        install_runc
-        install_cni_plugins
+        if [[ ! -f /usr/local/lib/systemd/system/containerd.service ]]; then
+            install_containerd
+            setup_containerd
+        fi
+        if [[ ! -f /usr/local/sbin/runc ]]; then
+            install_runc
+        fi
+        if [[ ! -f /tmp/cni-plugins-linux-amd64-v1.1.1.tgz ]]; then
+            install_cni_plugins
+        fi
         install_kubernetes
     fi
 }

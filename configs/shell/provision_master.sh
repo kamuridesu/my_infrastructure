@@ -10,7 +10,7 @@ start_kube() {
         touch /home/vagrant/.kube/config
         cat /etc/kubernetes/admin.conf > /home/vagrant/.kube/config
         MASTER_NAME=$(kubectl get nodes | head -2 | tail -1 | awk '{print $1}')
-        kubectl taint node $MASTER_NAME node-role.kubernetes.io/control-plane:NoSchedule-
+        kubectl taint node $MASTER_NAME node-role.kubernetes.io/control-plane:NoSchedule- node.kubernetes.io/not-ready:NoSchedule-
         cowsay Kube started!
     fi
     export KUBECONFIG=/etc/kubernetes/admin.conf
@@ -30,67 +30,72 @@ install_helm() {
 
 
 setup_calico() {
-    cowsay Installing calico... # https://projectcalico.docs.tigera.io/getting-started/kubernetes/self-managed-onprem/onpremises
-    kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.24.1/manifests/tigera-operator.yaml
-    kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.24.1/manifests/custom-resources.yaml
-    # kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.24.5/manifests/calico.yaml
-    while [[ "$(kubectl get pods -n calico-apiserver | tail -1 | awk '{print $3}')" != "Running" ]]; do
-        cowsay Waiting Calico resources...
-        sleep 5
-    done
+    if [[ "$(kubectl get pods -n calico-apiserver | tail -1 | awk '{print $3}')" != "Running" ]]; then
+        cowsay Installing calico... # https://projectcalico.docs.tigera.io/getting-started/kubernetes/self-managed-onprem/onpremises
+        kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.24.1/manifests/tigera-operator.yaml
+        kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.24.1/manifests/custom-resources.yaml
+        # kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.24.5/manifests/calico.yaml
+        while [[ "$(kubectl get pods -n calico-apiserver | tail -1 | awk '{print $3}')" != "Running" ]]; do
+            cowsay Waiting Calico resources...
+            sleep 5
+        done
+    fi
     cowsay Calico is running!
 }
 
 setup_istio() {
-    cowsay Setting up Istio
-    # Start from here: https://istio.io/latest/docs/setup/install/helm/
-    helm repo add istio https://istio-release.storage.googleapis.com/charts
-    helm repo update
-    kubectl create namespace istio-system
-    helm install istio-base istio/base -n istio-system
-    helm install istiod istio/istiod -n istio-system --wait
-    # On step four, from here: https://istio.io/latest/docs/setup/additional-setup/gateway/
-    cowsay Creating Istio ingress gateway
-    kubectl create namespace istio-ingress
-    kubectl label namespace istio-ingress istio-injection=enabled # https://istio.io/latest/docs/setup/additional-setup/sidecar-injection/#automatic-sidecar-injection
-    helm install istio-ingressgateway istio/gateway -n istio-ingress
-    while [[ "$(kubectl get pods -n istio-ingress | tail -1 | awk '{print $3}')" != "Running" ]]; do
-        cowsay Waiting Istio...
-        sleep 5
-    done
-    cowsay Istio started!
+    if [[ "$(kubectl get pods -n istio-ingress | tail -1 | awk '{print $3}')" != "Running" ]]; then
+        cowsay Setting up Istio
+        # Start from here: https://istio.io/latest/docs/setup/install/helm/
+        helm repo add istio https://istio-release.storage.googleapis.com/charts
+        helm repo update
+        kubectl create namespace istio-system
+        helm install istio-base istio/base -n istio-system
+        helm install istiod istio/istiod -n istio-system --wait
+        # On step four, from here: https://istio.io/latest/docs/setup/additional-setup/gateway/
+        cowsay Creating Istio ingress gateway
+        kubectl create namespace istio-ingress
+        kubectl label namespace istio-ingress istio-injection=enabled # https://istio.io/latest/docs/setup/additional-setup/sidecar-injection/#automatic-sidecar-injection
+        helm install istio-ingressgateway istio/gateway -n istio-ingress
+        while [[ "$(kubectl get pods -n istio-ingress | tail -1 | awk '{print $3}')" != "Running" ]]; do
+            cowsay Waiting Istio...
+            sleep 5
+        done
+    fi
+    cowsay Istio is running!
 }
 
 setup_argocd() {
-    cowsay Setting up argocd
-    # https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/
-    kubectl create namespace argocd
-    kubectl label namespace argocd istio-injection=enabled --overwrite
-    kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-    kubectl apply -n argocd -f /vagrant/configs/argocd/resources/gateway.yaml
-    kubectl apply -n argocd -f /vagrant/configs/argocd/resources/virtualservice.yaml
-    cp /vagrant/configs/argocd/resources/repositories.yaml /tmp/
-    ssh-keyscan gitlab.kube.local | sed -e 's/^/      /' >> /tmp/repositories.yaml
-    ssh-keyscan 10.0.2.2 | sed -e 's/^/      /' >> /tmp/repositories.yaml
-    kubectl apply -n argocd -f /tmp/repositories.yaml
-    kubectl patch deployment -n argocd argocd-server --patch-file /vagrant/configs/argocd/patches/argocd-server.deployment.patch.yaml # patch argocd-server to avoid tls errors
-    kubectl apply -n argocd -f /vagrant/configs/argocd/patches/argocd-redis.networkpolicy.patch.yaml # remove egress from argocd-redis network policy to avoid istio errors
-    kubectl patch deployment -n argocd argocd-repo-server --patch-file /vagrant/configs/argocd/patches/argocd-repo-server.deployment.patch.yaml  # add hostaliases
-    kubectl patch secret -n argocd argocd-secret --patch-file /vagrant/configs/argocd/patches/secret.patch.yaml # patch argocd-secret to add keycloak credential
-    kubectl patch configmap -n argocd argocd-cm --patch-file /vagrant/configs/argocd/patches/configmap.patch.yaml # patch argocd-cm to add keycloak info
-    kubectl patch configmap -n argocd argocd-rbac-cm --patch-file /vagrant/configs/argocd/patches/rbac.patch.yaml # patch argocd-rbac-cm add keycloak roles
-    kubectl apply -n argocd -f /vagrant/configs/gitlab/applications/infra.application.yaml
-    cowsay Waiting ArgoCD...
-    while [[ "$(kubectl get pods -n argocd| tail -1 | awk '{print $3}')" != "Running" ]]; do
-        cowsay Waiting Argocd...
-        sleep 5
-    done
+    if [[ "$(kubectl get pods -n argocd| tail -1 | awk '{print $3}')" != "Running" ]]; then
+        cowsay Setting up argocd
+        # https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/
+        kubectl create namespace argocd
+        kubectl label namespace argocd istio-injection=enabled --overwrite
+        kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+        kubectl apply -n argocd -f /vagrant/configs/argocd/resources/gateway.yaml
+        kubectl apply -n argocd -f /vagrant/configs/argocd/resources/virtualservice.yaml
+        cp /vagrant/configs/argocd/resources/repositories.yaml /tmp/
+        ssh-keyscan gitlab.kube.local | sed -e 's/^/      /' >> /tmp/repositories.yaml
+        ssh-keyscan 10.0.2.2 | sed -e 's/^/      /' >> /tmp/repositories.yaml
+        kubectl apply -n argocd -f /tmp/repositories.yaml
+        kubectl patch deployment -n argocd argocd-server --patch-file /vagrant/configs/argocd/patches/argocd-server.deployment.patch.yaml # patch argocd-server to avoid tls errors
+        kubectl apply -n argocd -f /vagrant/configs/argocd/patches/argocd-redis.networkpolicy.patch.yaml # remove egress from argocd-redis network policy to avoid istio errors
+        kubectl patch deployment -n argocd argocd-repo-server --patch-file /vagrant/configs/argocd/patches/argocd-repo-server.deployment.patch.yaml  # add hostaliases
+        kubectl patch secret -n argocd argocd-secret --patch-file /vagrant/configs/argocd/patches/secret.patch.yaml # patch argocd-secret to add keycloak credential
+        kubectl patch configmap -n argocd argocd-cm --patch-file /vagrant/configs/argocd/patches/configmap.patch.yaml # patch argocd-cm to add keycloak info
+        kubectl patch configmap -n argocd argocd-rbac-cm --patch-file /vagrant/configs/argocd/patches/rbac.patch.yaml # patch argocd-rbac-cm add keycloak roles
+        kubectl apply -n argocd -f /vagrant/configs/gitlab/applications/infra.application.yaml
+        cowsay Waiting ArgoCD...
+        kubectl rollout restart deployment argocd-server -n argocd  # Restart argocd-server to apply the patches
+        kubectl rollout restart deployment argocd-redis -n argocd  # Restart argocd-redis to apply the patches
+        while [[ "$(kubectl get pods -n argocd| tail -1 | awk '{print $3}')" != "Running" ]]; do
+            cowsay Waiting Argocd...
+            sleep 5
+        done
+    fi
     cowsay Argocd is running!
     # Files in the configs/argocd folder
     # Reference for ingresses: https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/
-
-    kubectl rollout restart deployment argocd-server -n argocd  # Restart argocd-server to apply the patches
-    kubectl rollout restart deployment argocd-redis -n argocd  # Restart argocd-redis to apply the patches
 }
 
 
