@@ -1,0 +1,11 @@
+- NAME: "master01"
+  CPU: "4"
+  MEMORY: "6000"
+  TYPE: "master"
+  IP: 10.0.1.100
+
+- NAME: "worker01"
+  CPU: "2"
+  MEMORY: "2000"
+  TYPE: "worker"
+  IP: 10.0.1.101

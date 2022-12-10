@@ -1,26 +1,30 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+require 'yaml'
+require 'pathname'
+
 DEFAULT_IMAGE = "debian/buster64"
 
-MASTER = {
-  "CPU" => "4",
-  "MEMORY" => "6000",
-  "IP" => "10.0.1.100",
-  "TYPE" => "master",
-  "NAME" => "master01",
-}
+if ENV['INV_FILE'] != nil then
+  file = Pathname.new(ENV['INV_FILE'])
+  if ! file.exist? then
+    abort "ERROR: file \"#{file}\" does not exists!"
+  end
+else
+  abort "ERROR: Expecting a configuration file!"
+end
 
-WORKER = {
-  "CPU" => "2",
-  "MEMORY" => "2000",
-  "IP" => "10.0.1.101",
-  "TYPE" => "worker",
-  "NAME" => "worker01"
-}
+INVENTORY = YAML.load_file(File.join(File.dirname(__FILE__), ENV['INV_FILE']))
 
+["NAME", "CPU", "MEMORY", "IP", "TYPE"].each do |key|
+    INVENTORY.each_with_index do |config, idx|
+        if (!config.has_key?(key)) && (!config.has_key?(key.to_sym))
+            abort "ERROR: Missing parameter \"#{key}\" on the machine number #{idx + 1} of the inventory file!"
+        end
+    end
+end
 
-INVENTORY = [MASTER, WORKER]
 
 Vagrant.configure("2") do |config|
 
