@@ -29,6 +29,7 @@ end
 Vagrant.configure("2") do |config|
 
   config.vm.box = DEFAULT_IMAGE
+  config.vm.synced_folder ".", "/vagrant"
   INVENTORY.each do |virtualmachines|
     config.vm.define virtualmachines["NAME"] do |box|
 
@@ -49,7 +50,6 @@ Vagrant.configure("2") do |config|
       elsif virtualmachines["TYPE"] == "worker" then
         box.vm.provision "shell", path: "configs/shell/provision_worker.sh"
       end
-
     end
   end
 end

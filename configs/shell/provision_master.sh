@@ -3,7 +3,7 @@
 start_kube() {
     if [[ "$PROVISIONED" == "FALSE" ]]; then
         cowsay Starting kubeadm
-        kubeadm init --pod-network-cidr=192.168.0.0/16 --apiserver-cert-extra-sans=10.0.1.100 --control-plane-endpoint master:6443 --apiserver-advertise-address=10.0.1.100
+        kubeadm init --pod-network-cidr=192.168.0.0/16 --apiserver-cert-extra-sans=192.168.0.100 --control-plane-endpoint master:6443 --apiserver-advertise-address=192.168.0.100
         export KUBECONFIG=/etc/kubernetes/admin.conf
         cp /etc/kubernetes/admin.conf ~
         mkdir -p /home/vagrant/.kube/
@@ -115,6 +115,7 @@ setup_haproxy() {
 }
 
 _done() {
+    kubeadm token create --print-join-command > /vagrant/join_command
     ARGO_SECRET=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
     cowsay "Done! ArgoCD admin secret: $ARGO_SECRET"
 }

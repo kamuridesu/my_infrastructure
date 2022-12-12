@@ -84,8 +84,8 @@ create_dns_entries() {
     echo "127.0.0.1       kube.local" >> /etc/hosts
     echo "10.0.2.2        gitlab.kube.local" >> /etc/hosts
     echo "10.0.2.2        postgres.kube.local" >> /etc/hosts
-    echo "10.0.1.100      master" >> /etc/hosts
-    echo "10.0.1.101      worker" >> /etc/hosts
+    echo "192.168.0.100      master" >> /etc/hosts
+    echo "192.168.0.101      worker" >> /etc/hosts
 }
 
 setup_kubernetes() {

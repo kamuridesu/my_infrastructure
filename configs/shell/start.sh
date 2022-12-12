@@ -24,14 +24,18 @@ tf_apply_configs() {
 }
 
 setup_gitlab() {
+    echo $(pwd)
     docker-compose up -d --build
     start_gitlab
     tf_apply_configs
 }
 
 setup_k8s() {
+    export INV_FILE=inventory.yaml
     cowsay "Provisioning Kubernetes..."
     vagrant up
+    JOIN_NODE_COMMAND=$(vagrant ssh master01 -c "kubeadm token create --print-join-command")
+    vagrant ssh worker01 -c "$JOIN_NODE_COMMAND"
 }
 
 main() {
@@ -39,7 +43,8 @@ main() {
     setup_k8s
 
     mkdir -p $HOME/.config/OpenLens/kubeconfigs/
-    vagrant ssh master -c "cat /home/vagrant/.kube/config" > $HOME/.config/OpenLens/kubeconfigs/vagrant_config
+    export INV_FILE=inventory.yaml
+    vagrant ssh master01 -c "cat /home/vagrant/.kube/config" > $HOME/.config/OpenLens/kubeconfigs/vagrant_config
     GITLAB_PASSWORD=$(docker exec  infra_gitlab cat /etc/gitlab/initial_root_password | grep Password | tail -1)
     cowsay "Done! Gitlab initial password: $GITLAB_PASSWORD"
 }

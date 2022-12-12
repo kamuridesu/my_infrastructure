@@ -2,7 +2,6 @@ clean:
 	sh ./configs/shell/clean.sh
 
 start:
-	export ENV_FILE=inventory.yaml
 	sh ./configs/shell/start.sh
 
 reload_kube:
